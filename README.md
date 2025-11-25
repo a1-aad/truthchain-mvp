@@ -14,24 +14,7 @@ An open-source platform that verifies news authenticity using IPFS storage and P
 
 **Try it now:** [https://truthchain.replit.app/](https://truthchain.replit.app/)
 
----
 
-## Screenshots
-
-### Homepage - Connect Wallet
-![Homepage](https://via.placeholder.com/800x500.png?text=TruthChain+Homepage+-+Connect+Your+MetaMask+Wallet)
-
-*Connect your MetaMask wallet to start verifying news on the blockchain*
-
-### Upload News for Verification
-![Upload Form](https://via.placeholder.com/800x500.png?text=Upload+Form+-+Submit+News+with+Media+Files)
-
-*Submit news content with supporting images or videos for permanent verification*
-
-### Verified Records Table
-![Records Table](https://via.placeholder.com/800x500.png?text=Verified+Records+-+Blockchain+Proof+with+IPFS+Links)
-
-*View all verified records with IPFS links, transaction hashes, and verification status*
 
 ---
 
