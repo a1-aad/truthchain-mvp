@@ -2,20 +2,35 @@ import { ethers } from 'ethers';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Minimal TruthChain contract ABI
 const TRUTHCHAIN_ABI = [
-  "event RecordStored(bytes32 indexed hash, string cid, address indexed submitter, uint256 timestamp)",
-  "function storeRecord(bytes32 hash, string memory cid) public"
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "hash", "type": "bytes32" },
+      { "internalType": "string", "name": "cid", "type": "string" }
+    ],
+    "name": "storeRecord",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "hash", "type": "bytes32" },
+      { "indexed": false, "internalType": "string", "name": "cid", "type": "string" },
+      { "indexed": true, "internalType": "address", "name": "submitter", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+    ],
+    "name": "RecordStored",
+    "type": "event"
+  }
 ];
 
-// Load contract address from config or environment
 function getContractAddress(): string | null {
-  // Try environment variable first
   if (process.env.CONTRACT_ADDRESS) {
     return process.env.CONTRACT_ADDRESS;
   }
   
-  // Try to load from contract-config.json
   try {
     const configPath = path.join(process.cwd(), 'contract-config.json');
     if (fs.existsSync(configPath)) {
@@ -34,33 +49,21 @@ export async function storeOnBlockchain(hash: string, cid: string): Promise<stri
   const privateKey = process.env.POLYGON_PRIVATE_KEY;
   const testMode = process.env.TEST_MODE === 'true';
 
-  // TEST MODE for MVP demonstration (skips blockchain)
   if (testMode) {
     console.log('🧪 TEST MODE: Simulating blockchain verification');
-    console.log('   - Hash:', hash.substring(0, 16) + '...');
-    console.log('   - CID:', cid);
-    console.log('   - ⚠️ Records are NOT verified on blockchain!');
-    console.log('   - To enable real blockchain:');
-    console.log('     1. Get testnet MATIC from https://faucet.polygon.technology/');
-    console.log('     2. Deploy contract: npx tsx scripts/deploy.ts');
-    console.log('     3. Set TEST_MODE=false');
-    
     const mockTxHash = '0xtest_' + hash.substring(0, 58);
     return mockTxHash;
   }
 
-  // Check configuration for real blockchain
   if (!privateKey) {
-    throw new Error('POLYGON_PRIVATE_KEY not configured. Set it in Replit Secrets or enable TEST_MODE=true');
+    throw new Error('POLYGON_PRIVATE_KEY not configured');
   }
   
   if (!contractAddress) {
-    throw new Error('CONTRACT_ADDRESS not configured. Deploy contract or enable TEST_MODE=true');
+    throw new Error('CONTRACT_ADDRESS not configured. Deploy contract first.');
   }
 
-  // REAL BLOCKCHAIN MODE
   try {
-    // Connect to Polygon Mainnet
     const provider = new ethers.JsonRpcProvider('https://polygon-rpc.com/');
     const wallet = new ethers.Wallet(privateKey, provider);
     
@@ -68,41 +71,58 @@ export async function storeOnBlockchain(hash: string, cid: string): Promise<stri
     console.log('   Wallet:', wallet.address);
     console.log('   Contract:', contractAddress);
     
-    // Create contract instance
     const contract = new ethers.Contract(contractAddress, TRUTHCHAIN_ABI, wallet);
     
-    // Convert hash string to bytes32 (ensure 0x prefix)
-    const hashBytes32 = hash.startsWith('0x') ? hash : `0x${hash}`;
+    const hashBytes32 = '0x' + hash.replace(/^0x/, '');
     
     console.log('🔐 Recording verification:');
-    console.log('   Hash:', hashBytes32);
+    console.log('   Raw hash:', hash);
+    console.log('   Bytes32:', hashBytes32);
+    console.log('   Hash length:', hashBytes32.length, '(should be 66)');
     console.log('   CID:', cid);
     
-    // Store on blockchain with gas limit
+    if (hashBytes32.length !== 66) {
+      throw new Error(`Invalid hash length: ${hashBytes32.length}, expected 66 (0x + 64 hex chars)`);
+    }
+
+    const feeData = await provider.getFeeData();
+    console.log('   Gas price:', ethers.formatUnits(feeData.gasPrice || 0n, 'gwei'), 'gwei');
+
+    const populatedTx = await contract.storeRecord.populateTransaction(hashBytes32, cid);
+    console.log('   TX data length:', populatedTx.data?.length || 0);
+    
     const tx = await contract.storeRecord(hashBytes32, cid, {
-      gasLimit: 200000
+      gasLimit: 300000,
     });
     
     console.log('⏳ Transaction sent:', tx.hash);
+    console.log('   Waiting for confirmation...');
+    
     const receipt = await tx.wait();
-    console.log('✅ Transaction confirmed:', receipt.hash);
+    
+    console.log('✅ Transaction confirmed!');
     console.log('   Block:', receipt.blockNumber);
-    console.log('   View on Polygonscan: https://polygonscan.com/tx/' + receipt.hash);
+    console.log('   Gas used:', receipt.gasUsed.toString());
+    console.log('   Status:', receipt.status === 1 ? 'SUCCESS' : 'FAILED');
+    console.log('   View: https://polygonscan.com/tx/' + receipt.hash);
+    
+    if (receipt.status === 0) {
+      throw new Error('Transaction failed on-chain');
+    }
     
     return receipt.hash;
   } catch (error) {
     console.error('❌ Blockchain transaction failed:', error);
     
-    // Provide helpful error messages
     if (error instanceof Error) {
       if (error.message.includes('insufficient funds')) {
-        throw new Error('Insufficient MATIC for gas. Get testnet MATIC from https://faucet.polygon.technology/');
+        throw new Error('Insufficient POL for gas fees');
+      }
+      if (error.message.includes('Record already exists')) {
+        throw new Error('This content has already been verified on blockchain');
       }
       if (error.message.includes('nonce')) {
-        throw new Error('Transaction nonce error. Wait a moment and try again.');
-      }
-      if (error.message.includes('UNPREDICTABLE_GAS_LIMIT')) {
-        throw new Error('Contract interaction failed. Verify CONTRACT_ADDRESS points to deployed TruthChain contract.');
+        throw new Error('Transaction nonce error. Please try again.');
       }
     }
     
