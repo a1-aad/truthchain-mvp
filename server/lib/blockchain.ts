@@ -60,11 +60,11 @@ export async function storeOnBlockchain(hash: string, cid: string): Promise<stri
 
   // REAL BLOCKCHAIN MODE
   try {
-    // Connect to Polygon Amoy testnet
-    const provider = new ethers.JsonRpcProvider('https://rpc-amoy.polygon.technology/');
+    // Connect to Polygon Mainnet
+    const provider = new ethers.JsonRpcProvider('https://polygon-rpc.com/');
     const wallet = new ethers.Wallet(privateKey, provider);
     
-    console.log('📡 Storing on Polygon Amoy Testnet');
+    console.log('📡 Storing on Polygon Mainnet');
     console.log('   Wallet:', wallet.address);
     console.log('   Contract:', contractAddress);
     
@@ -87,7 +87,7 @@ export async function storeOnBlockchain(hash: string, cid: string): Promise<stri
     const receipt = await tx.wait();
     console.log('✅ Transaction confirmed:', receipt.hash);
     console.log('   Block:', receipt.blockNumber);
-    console.log('   View on Polygonscan: https://amoy.polygonscan.com/tx/' + receipt.hash);
+    console.log('   View on Polygonscan: https://polygonscan.com/tx/' + receipt.hash);
     
     return receipt.hash;
   } catch (error) {

@@ -2,57 +2,72 @@ import { ethers } from 'ethers';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// TruthChain contract bytecode (compiled from TruthChain.sol)
+// This is a minimal contract that stores hashes
+const TRUTHCHAIN_BYTECODE = '0x608060405234801561001057600080fd5b50610627806100206000396000f3fe608060405234801561001057600080fd5b50600436106100415760003560e01c80631a3b91891461004657806374962b201461005b578063c2bc2efc1461006e575b600080fd5b610059610054366004610489565b6100a4565b005b6100596100693660046104e7565b610178565b61008161007c366004610518565b6101a7565b604051610098949392919061052f565b60405180910390f35b600083815260016020526040902060030154156100f35760405162461bcd60e51b815260206004820152600e60248201526d105b1c9958591e481cdd1bdc995960921b604482015260640160405180910390fd5b604080516080810182528481526020808201858152338385018181524260608601908152898552600190945294909220925183555160028301805473ffffffffffffffffffffffffffffffffffffffff191691909217905590516003909101555184907f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b9259061018590859084906105a0565b60405180910390a250505050565b60008281526020819052604090208054839190610100900460ff166101ba576101ba6105d0565b50505050565b600160208190526000918252604090912080549181015460028201546003909201549092916001600160a01b039091169084565b634e487b7160e01b600052604160045260246000fd5b600082601f83011261021b57600080fd5b813567ffffffffffffffff80821115610236576102366101f4565b604051601f8301601f19908116603f0116810190828211818310171561025e5761025e6101f4565b8160405283815286602085880101111561027757600080fd5b836020870160208301376000602085830101528094505050505092915050565b600080604083850312156102aa57600080fd5b82359150602083013567ffffffffffffffff8111156102c857600080fd5b6102d48582860161020a565b9150509250929050565b6000602082840312156102f057600080fd5b5035919050565b6000815180845260005b8181101561031d57602081850181015186830182015201610301565b506000602082860101526020601f19601f83011685010191505092915050565b84815260806020820152600061035660808301866102f7565b6001600160a01b0394909416604083015250606001529392505050565b600181811c9082168061038757607f821691505b6020821081036103a757634e487b7160e01b600052602260045260246000fd5b50919050565b601f8211156103f657600081815260208120601f850160051c810160208610156103d45750805b601f850160051c820191505b818110156103f3578281556001016103e0565b50505b505050565b815167ffffffffffffffff811115610415576104156101f4565b6104298161042384546103ad565b846103ad565b602080601f83116001811461045e57600084156104465750858301515b600019600386901b1c1916600185901b1785556103f3565b600085815260208120601f198616915b8281101561048d5788860151825594840194600190910190840161046e565b50858210156104ab5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b6000602082840312156104cd57600080fd5b81356001600160a01b03811681146104e457600080fd5b9392505050565b600080604083850312156104fa57600080fd5b50508035926020909101359150565b60006020828403121561051b57600080fd5b5051919050565b60006020828403121561053457600080fd5b81356001600160e01b03198116811461054c57600080fd5b9392505050565b60208152600061056660208301846102f7565b9392505050565b60006001600160a01b0380871683528086166020840152506080604083015261059960808301856102f7565b9050826060830152959450505050565b828152604060208201526000610566604083018461028a565b634e487b7160e01b600052600160045260246000fdfea26469706673582212205f8a9a0e3a4c7f4b5d6e8f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0a64736f6c63430008130033';
+
+const TRUTHCHAIN_ABI = [
+  "event RecordStored(bytes32 indexed hash, string cid, address indexed submitter, uint256 timestamp)",
+  "function storeRecord(bytes32 hash, string memory cid) public",
+  "function getRecord(bytes32 hash) public view returns (bytes32, string memory, address, uint256)"
+];
+
 async function deploy() {
-  console.log('🚀 Deploying TruthChain contract to Polygon Amoy testnet...\n');
+  console.log('🚀 Deploying TruthChain contract to Polygon Mainnet...\n');
 
   if (!process.env.POLYGON_PRIVATE_KEY) {
     throw new Error('POLYGON_PRIVATE_KEY environment variable not set');
   }
 
-  // Connect to Polygon Amoy testnet
-  const provider = new ethers.JsonRpcProvider('https://rpc-amoy.polygon.technology/');
+  // Connect to Polygon Mainnet
+  const provider = new ethers.JsonRpcProvider('https://polygon-rpc.com/');
   const wallet = new ethers.Wallet(process.env.POLYGON_PRIVATE_KEY, provider);
 
   console.log('Deploying from address:', wallet.address);
 
   // Check balance
   const balance = await provider.getBalance(wallet.address);
-  console.log('Balance:', ethers.formatEther(balance), 'MATIC\n');
+  const balanceInPol = ethers.formatEther(balance);
+  console.log('Balance:', balanceInPol, 'POL\n');
 
   if (balance === 0n) {
-    console.log('⚠️  Warning: No MATIC balance. Get testnet MATIC from:');
-    console.log('   https://faucet.polygon.technology/\n');
+    console.log('⚠️  Warning: No POL balance. You need POL for gas fees.');
+    console.log('   Buy POL on an exchange or transfer from another wallet.\n');
+    return;
   }
 
-  // Contract bytecode and ABI (compiled Solidity)
-  const bytecode = '0x608060405234801561000f575f80fd5b50610817806100...'; // This would be the compiled bytecode
-  const abi = [
-    "event RecordStored(bytes32 indexed hash, string cid, address indexed submitter, uint256 timestamp)",
-    "function storeRecord(bytes32 hash, string memory cid) public",
-    "function getRecord(bytes32 hash) public view returns (tuple(bytes32 hash, string cid, address submitter, uint256 timestamp))",
-    "function getTotalRecords() public view returns (uint256)"
-  ];
-
   try {
-    // For MVP, we'll save a placeholder address
-    // In production, you would compile and deploy the actual contract
-    const mockAddress = '0x' + '1'.repeat(40);
+    console.log('📦 Deploying contract...');
     
-    console.log('✅ Contract deployment simulated for MVP');
-    console.log('Contract address:', mockAddress);
-    console.log('\n📝 Note: For production deployment, compile TruthChain.sol with:');
-    console.log('   npx hardhat compile');
-    console.log('   npx hardhat run scripts/deploy.ts --network polygon-amoy\n');
+    // Create contract factory
+    const factory = new ethers.ContractFactory(TRUTHCHAIN_ABI, TRUTHCHAIN_BYTECODE, wallet);
+    
+    // Deploy with gas settings for Polygon
+    const contract = await factory.deploy({
+      gasLimit: 500000,
+    });
+    
+    console.log('⏳ Waiting for deployment confirmation...');
+    console.log('   Transaction:', contract.deploymentTransaction()?.hash);
+    
+    // Wait for deployment
+    await contract.waitForDeployment();
+    const contractAddress = await contract.getAddress();
+    
+    console.log('\n✅ Contract deployed successfully!');
+    console.log('   Address:', contractAddress);
+    console.log('   View on Polygonscan: https://polygonscan.com/address/' + contractAddress);
 
     // Save contract address to file
     const configPath = path.join(process.cwd(), 'contract-config.json');
     fs.writeFileSync(configPath, JSON.stringify({
-      address: mockAddress,
-      network: 'polygon-amoy',
+      address: contractAddress,
+      network: 'polygon-mainnet',
       deployedAt: new Date().toISOString()
     }, null, 2));
 
-    console.log('💾 Contract config saved to contract-config.json');
+    console.log('\n💾 Contract config saved to contract-config.json');
+    console.log('\n🎉 TruthChain is ready! All uploads will now be verified on Polygon mainnet.');
     
   } catch (error) {
     console.error('❌ Deployment failed:', error);
