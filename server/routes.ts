@@ -1,8 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
+import path from "path";
+import express from "express";
 import { storage } from "./storage";
-import { uploadToIPFS } from "./lib/ipfs";
+import { uploadToIPFS, getStorageMode } from "./lib/ipfs";
 import { storeOnBlockchain } from "./lib/blockchain";
 import { generateHash } from "./lib/hash";
 
@@ -14,6 +16,20 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Serve locally stored files (for local storage fallback)
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+  
+  // GET /api/status - Check service status
+  app.get("/api/status", (_req, res) => {
+    res.json({
+      storageMode: getStorageMode(),
+      hasPinataJwt: !!process.env.PINATA_JWT,
+      hasWeb3Token: !!process.env.WEB3_STORAGE_TOKEN,
+      hasPolygonKey: !!process.env.POLYGON_PRIVATE_KEY,
+      hasContractAddress: !!process.env.CONTRACT_ADDRESS,
+    });
+  });
   
   // GET /api/records - Fetch all verified news records
   app.get("/api/records", async (_req, res) => {

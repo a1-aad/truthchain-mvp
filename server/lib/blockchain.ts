@@ -32,30 +32,30 @@ function getContractAddress(): string | null {
 export async function storeOnBlockchain(hash: string, cid: string): Promise<string> {
   const contractAddress = getContractAddress();
   const privateKey = process.env.POLYGON_PRIVATE_KEY;
-  const enableMockMode = process.env.BLOCKCHAIN_MOCK_MODE === 'true';
+  const testMode = process.env.TEST_MODE === 'true';
 
-  // Check configuration
+  // TEST MODE for MVP demonstration (skips blockchain)
+  if (testMode) {
+    console.log('🧪 TEST MODE: Simulating blockchain verification');
+    console.log('   - Hash:', hash.substring(0, 16) + '...');
+    console.log('   - CID:', cid);
+    console.log('   - ⚠️ Records are NOT verified on blockchain!');
+    console.log('   - To enable real blockchain:');
+    console.log('     1. Get testnet MATIC from https://faucet.polygon.technology/');
+    console.log('     2. Deploy contract: npx tsx scripts/deploy.ts');
+    console.log('     3. Set TEST_MODE=false');
+    
+    const mockTxHash = '0xtest_' + hash.substring(0, 58);
+    return mockTxHash;
+  }
+
+  // Check configuration for real blockchain
   if (!privateKey) {
-    console.warn('⚠️  POLYGON_PRIVATE_KEY not configured');
+    throw new Error('POLYGON_PRIVATE_KEY not configured. Set it in Replit Secrets or enable TEST_MODE=true');
   }
   
   if (!contractAddress) {
-    console.warn('⚠️  CONTRACT_ADDRESS not configured');
-  }
-
-  // MOCK MODE for MVP testing
-  if (enableMockMode || !privateKey || !contractAddress) {
-    console.log('🔧 Running in MOCK MODE (blockchain simulation)');
-    console.log('   - Hash:', hash.substring(0, 16) + '...');
-    console.log('   - CID:', cid);
-    console.log('   - To enable real blockchain:');
-    console.log('     1. Set POLYGON_PRIVATE_KEY in Replit Secrets');
-    console.log('     2. Set CONTRACT_ADDRESS or deploy contract');
-    console.log('     3. Set BLOCKCHAIN_MOCK_MODE=false (or remove it)');
-    
-    // Return mock transaction hash
-    const mockTxHash = '0x' + hash.substring(0, 64);
-    return mockTxHash;
+    throw new Error('CONTRACT_ADDRESS not configured. Deploy contract or enable TEST_MODE=true');
   }
 
   // REAL BLOCKCHAIN MODE
