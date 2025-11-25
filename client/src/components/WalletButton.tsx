@@ -48,7 +48,7 @@ export function WalletButton() {
           data-testid="button-connect-wallet"
         >
           <Wallet className="h-4 w-4" />
-          {isConnecting ? 'جاري الاتصال...' : 'ربط المحفظة'}
+          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
         </Button>
         {error && (
           <span className="text-xs text-destructive">{error}</span>
@@ -68,7 +68,7 @@ export function WalletButton() {
           data-testid="button-switch-network"
         >
           <AlertTriangle className="h-3 w-3" />
-          التبديل إلى Polygon
+          Switch to Polygon
         </Button>
       )}
       
@@ -94,7 +94,7 @@ export function WalletButton() {
           {!isPolygonMainnet && (
             <DropdownMenuItem onClick={switchToPolygon} data-testid="menu-switch-polygon">
               <AlertTriangle className="h-4 w-4 mr-2 text-yellow-500" />
-              التبديل إلى Polygon
+              Switch to Polygon
             </DropdownMenuItem>
           )}
           <DropdownMenuItem 
@@ -103,7 +103,7 @@ export function WalletButton() {
             data-testid="menu-disconnect"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            قطع الاتصال
+            Disconnect
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -94,7 +94,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const ethereum = (window as any).ethereum;
     
     if (!ethereum) {
-      setError('MetaMask غير مثبت. يرجى تثبيته من metamask.io');
+      setError('MetaMask is not installed. Please install it from metamask.io');
       return;
     }
 
@@ -113,9 +113,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
     } catch (err: any) {
       if (err.code === 4001) {
-        setError('تم رفض الاتصال');
+        setError('Connection rejected');
       } else {
-        setError('فشل الاتصال بالمحفظة');
+        setError('Failed to connect wallet');
       }
     } finally {
       setIsConnecting(false);
@@ -155,7 +155,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             }],
           });
         } catch (addError) {
-          setError('فشل إضافة شبكة Polygon');
+          setError('Failed to add Polygon network');
         }
       }
     }
@@ -163,15 +163,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const signAndSendTransaction = useCallback(async (hash: string, cid: string): Promise<string> => {
     if (!address) {
-      throw new Error('المحفظة غير متصلة');
+      throw new Error('Wallet not connected');
     }
 
     if (!isPolygonMainnet) {
-      throw new Error('يرجى التبديل إلى شبكة Polygon');
+      throw new Error('Please switch to Polygon network');
     }
 
     if (!contractAddress) {
-      throw new Error('عنوان العقد غير متوفر');
+      throw new Error('Contract address not available');
     }
 
     let hashBytes32: string;
@@ -180,12 +180,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const hashBytes = ethers.getBytes(normalizedHash);
       
       if (hashBytes.length !== 32) {
-        throw new Error('يجب أن يكون 32 بايت');
+        throw new Error('Must be 32 bytes');
       }
       
       hashBytes32 = ethers.hexlify(hashBytes);
     } catch {
-      throw new Error('صيغة الهاش غير صحيحة - يجب أن يكون 32 بايت سداسي عشري');
+      throw new Error('Invalid hash format - must be 32-byte hexadecimal');
     }
 
     const ethereum = (window as any).ethereum;
@@ -209,7 +209,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const receipt = await tx.wait();
       
       if (receipt.status === 0) {
-        throw new Error('فشلت المعاملة على البلوكتشين');
+        throw new Error('Transaction failed on blockchain');
       }
       
       console.log('✅ Transaction confirmed:', receipt.hash);
@@ -219,16 +219,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       console.error('Transaction error:', err);
       
       if (err.code === 4001 || err.code === 'ACTION_REJECTED') {
-        throw new Error('تم رفض المعاملة من قبل المستخدم');
+        throw new Error('Transaction rejected by user');
       }
       if (err.message?.includes('insufficient funds')) {
-        throw new Error('رصيد POL غير كافٍ لدفع رسوم الغاز');
+        throw new Error('Insufficient POL balance for gas fees');
       }
       if (err.message?.includes('Record already exists')) {
-        throw new Error('هذا المحتوى تم التحقق منه مسبقاً');
+        throw new Error('This content has already been verified');
       }
       
-      throw new Error(err.shortMessage || err.message || 'فشل في إرسال المعاملة');
+      throw new Error(err.shortMessage || err.message || 'Failed to send transaction');
     }
   }, [address, isPolygonMainnet, contractAddress]);
 

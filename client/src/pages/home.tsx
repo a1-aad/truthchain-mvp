@@ -43,22 +43,22 @@ export default function HomePage() {
       const text = formData.get('text') as string;
       
       // Step 1: Prepare upload (IPFS + hash)
-      setUploadProgress("جاري الرفع إلى IPFS...");
+      setUploadProgress("Uploading to IPFS...");
       setProgressValue(25);
       
       const prepareResponse = await apiRequest("POST", "/api/prepare-upload", formData) as PrepareUploadResponse;
       
       if (!prepareResponse.success) {
-        throw new Error("فشل التحضير");
+        throw new Error("Preparation failed");
       }
 
       // Step 2: Sign and send blockchain transaction
-      setUploadProgress("يرجى توقيع المعاملة في MetaMask...");
+      setUploadProgress("Please sign the transaction in MetaMask...");
       setProgressValue(50);
       
       const txHash = await signAndSendTransaction(prepareResponse.hash, prepareResponse.cid);
       
-      setUploadProgress("جاري حفظ السجل...");
+      setUploadProgress("Saving record...");
       setProgressValue(75);
 
       // Step 3: Save record to database
@@ -83,8 +83,8 @@ export default function HomePage() {
       setUploadProgress("");
       setProgressValue(0);
       toast({
-        title: "تم التحقق بنجاح!",
-        description: "تم تسجيل الخبر على البلوكتشين",
+        title: "Verification Successful!",
+        description: "Your news has been recorded on the blockchain",
       });
     },
     onError: (error: Error) => {
@@ -92,8 +92,8 @@ export default function HomePage() {
       setProgressValue(0);
       toast({
         variant: "destructive",
-        title: "فشل الرفع",
-        description: error.message || "حدث خطأ غير متوقع",
+        title: "Upload Failed",
+        description: error.message || "An unexpected error occurred",
       });
     },
   });
@@ -104,8 +104,8 @@ export default function HomePage() {
     if (!isConnected) {
       toast({
         variant: "destructive",
-        title: "المحفظة غير متصلة",
-        description: "يرجى ربط محفظة MetaMask أولاً",
+        title: "Wallet Not Connected",
+        description: "Please connect your MetaMask wallet first",
       });
       return;
     }
@@ -113,8 +113,8 @@ export default function HomePage() {
     if (!isPolygonMainnet) {
       toast({
         variant: "destructive",
-        title: "شبكة خاطئة",
-        description: "يرجى التبديل إلى شبكة Polygon",
+        title: "Wrong Network",
+        description: "Please switch to Polygon network",
       });
       return;
     }
@@ -122,8 +122,8 @@ export default function HomePage() {
     if (!newsText.trim() || !selectedFile) {
       toast({
         variant: "destructive",
-        title: "معلومات ناقصة",
-        description: "يرجى إدخال النص وإرفاق ملف",
+        title: "Missing Information",
+        description: "Please enter text and attach a file",
       });
       return;
     }
@@ -142,8 +142,8 @@ export default function HomePage() {
       if (!validTypes.includes(file.type)) {
         toast({
           variant: "destructive",
-          title: "نوع ملف غير مدعوم",
-          description: "يرجى رفع صورة (JPG, PNG, GIF) أو فيديو (MP4, WebM)",
+          title: "Unsupported File Type",
+          description: "Please upload an image (JPG, PNG, GIF) or video (MP4, WebM)",
         });
         return;
       }
@@ -156,7 +156,7 @@ export default function HomePage() {
     setCopiedField(field);
     setTimeout(() => setCopiedField(""), 2000);
     toast({
-      description: "تم النسخ",
+      description: "Copied to clipboard",
     });
   };
 
@@ -185,14 +185,14 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="py-12 bg-gradient-to-b from-primary/5 to-background">
         <div className="max-w-6xl mx-auto px-6 text-center">
-          <h2 className="text-2xl font-semibold mb-4">تحقق من الأخبار بتقنية البلوكتشين</h2>
+          <h2 className="text-2xl font-semibold mb-4">Verify News with Blockchain Technology</h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            ارفع المحتوى مع ملفات الوسائط. نخزنها على IPFS، وننشئ بصمات تشفيرية، ونسجل التحقق بشكل دائم على شبكة Polygon.
+            Upload content with media files. We store them on IPFS, generate cryptographic fingerprints, and permanently record verification on Polygon.
           </p>
           <div className="flex items-center justify-center gap-8 text-sm flex-wrap">
             <div className="flex items-center gap-2">
               <Database className="w-4 h-4 text-primary" />
-              <span className="font-medium">{records.length} سجل موثق</span>
+              <span className="font-medium">{records.length} Verified Records</span>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="font-mono">Polygon</Badge>
@@ -212,12 +212,12 @@ export default function HomePage() {
                 <div className="flex items-center gap-3">
                   <Wallet className="w-6 h-6 text-primary" />
                   <div>
-                    <p className="font-medium">ربط المحفظة مطلوب</p>
-                    <p className="text-sm text-muted-foreground">قم بربط MetaMask للتحقق من الأخبار على البلوكتشين</p>
+                    <p className="font-medium">Wallet Connection Required</p>
+                    <p className="text-sm text-muted-foreground">Connect MetaMask to verify news on the blockchain</p>
                   </div>
                 </div>
                 <Button onClick={connect} data-testid="button-connect-wallet-notice">
-                  ربط MetaMask
+                  Connect MetaMask
                 </Button>
               </CardContent>
             </Card>
@@ -232,28 +232,27 @@ export default function HomePage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <CloudUpload className="w-5 h-5 text-primary" />
-                <CardTitle>رفع خبر للتحقق</CardTitle>
+                <CardTitle>Upload News for Verification</CardTitle>
               </div>
-              <CardDescription>ارفع المحتوى مع ملف وسائط لإنشاء سجل دائم</CardDescription>
+              <CardDescription>Upload content with a media file to create a permanent record</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="text-input" className="text-sm font-medium uppercase tracking-wide">نص الخبر</Label>
+                  <Label htmlFor="text-input" className="text-sm font-medium uppercase tracking-wide">News Text</Label>
                   <Textarea
                     id="text-input"
                     data-testid="input-news-text"
-                    placeholder="أدخل محتوى الخبر الذي تريد التحقق منه..."
+                    placeholder="Enter the news content you want to verify..."
                     value={newsText}
                     onChange={(e) => setNewsText(e.target.value)}
                     rows={5}
                     className="resize-none"
-                    dir="rtl"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="file-input" className="text-sm font-medium uppercase tracking-wide">ملف الوسائط</Label>
+                  <Label htmlFor="file-input" className="text-sm font-medium uppercase tracking-wide">Media File</Label>
                   <div className="border-2 border-dashed rounded-lg p-8 text-center hover-elevate transition-colors">
                     <Input
                       id="file-input"
@@ -266,10 +265,10 @@ export default function HomePage() {
                     <label htmlFor="file-input" className="cursor-pointer">
                       <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
                       <p className="font-medium mb-1">
-                        {selectedFile ? selectedFile.name : "اسحب الملف هنا أو انقر للاختيار"}
+                        {selectedFile ? selectedFile.name : "Drag file here or click to select"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        صور: JPG, PNG, GIF | فيديو: MP4, WebM
+                        Images: JPG, PNG, GIF | Video: MP4, WebM
                       </p>
                     </label>
                   </div>
@@ -294,22 +293,22 @@ export default function HomePage() {
                   {uploadMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      جاري التحقق...
+                      Verifying...
                     </>
                   ) : !isConnected ? (
                     <>
                       <Wallet className="w-4 h-4 mr-2" />
-                      ربط المحفظة أولاً
+                      Connect Wallet First
                     </>
                   ) : !isPolygonMainnet ? (
                     <>
                       <ShieldCheck className="w-4 h-4 mr-2" />
-                      التبديل إلى Polygon
+                      Switch to Polygon
                     </>
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4 mr-2" />
-                      تحقق وأرسل
+                      Verify & Submit
                     </>
                   )}
                 </Button>
@@ -327,10 +326,10 @@ export default function HomePage() {
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  <CardTitle>السجلات الموثقة</CardTitle>
+                  <CardTitle>Verified Records</CardTitle>
                 </div>
                 <Badge variant="secondary" data-testid="badge-record-count">
-                  {records.length} {records.length === 1 ? "سجل" : "سجلات"}
+                  {records.length} {records.length === 1 ? "record" : "records"}
                 </Badge>
               </div>
             </CardHeader>
@@ -342,19 +341,19 @@ export default function HomePage() {
               ) : records.length === 0 ? (
                 <div className="text-center py-12">
                   <ShieldCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p className="text-muted-foreground font-medium">لا توجد سجلات بعد</p>
-                  <p className="text-sm text-muted-foreground mt-1">قم برفع أول خبر للتحقق منه</p>
+                  <p className="text-muted-foreground font-medium">No records yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">Upload the first news to verify</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>الوقت</TableHead>
-                        <TableHead>النص</TableHead>
-                        <TableHead>الوسائط</TableHead>
-                        <TableHead>الحالة</TableHead>
-                        <TableHead>تفاصيل التحقق</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Text</TableHead>
+                        <TableHead>Media</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Verification Details</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -383,7 +382,7 @@ export default function HomePage() {
                           <TableCell>
                             <Badge variant="default" className="gap-1">
                               <ShieldCheck className="w-3 h-3" />
-                              موثق
+                              Verified
                             </Badge>
                           </TableCell>
                           <TableCell>
