@@ -132,16 +132,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Check for duplicate records
-      const existingRecords = await storage.getAllRecords();
-      const isDuplicate = existingRecords.some(r => r.hash === hash || r.tx === tx);
-      if (isDuplicate) {
-        return res.status(409).json({
-          error: "Duplicate record",
-          message: "This content has already been verified"
-        });
-      }
-
       // Verify the transaction on-chain with event log decoding
       const contractAddr = getContractAddress();
       if (contractAddr) {
@@ -171,63 +161,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Decode RecordStored event from logs
-        const eventSignature = ethers.id("RecordStored(bytes32,string,address,uint256)");
-        const recordStoredLog = receipt.logs.find(
-          log => log.topics[0] === eventSignature && 
-                 log.address.toLowerCase() === contractAddr.toLowerCase()
-        );
-
-        if (!recordStoredLog) {
+        // Decode RecordStored event using ABI
+        const eventAbi = [
+          "event RecordStored(bytes32 indexed hash, string cid, address indexed submitter, uint256 timestamp)"
+        ];
+        const iface = new ethers.Interface(eventAbi);
+        
+        let eventFound = false;
+        for (const log of receipt.logs) {
+          if (log.address.toLowerCase() !== contractAddr.toLowerCase()) continue;
+          
+          try {
+            const parsed = iface.parseLog({
+              topics: log.topics as string[],
+              data: log.data
+            });
+            
+            if (parsed?.name === 'RecordStored') {
+              const eventHash = parsed.args[0];
+              const eventCid = parsed.args[1];
+              const eventSubmitter = parsed.args[2];
+              
+              // Normalize the hash for comparison
+              const normalizedHash = hash.startsWith('0x') ? hash : '0x' + hash;
+              const expectedHashBytes = ethers.getBytes(normalizedHash);
+              const expectedHashHex = ethers.hexlify(expectedHashBytes);
+              
+              // Verify hash matches
+              if (eventHash.toLowerCase() !== expectedHashHex.toLowerCase()) {
+                return res.status(400).json({
+                  error: "Hash mismatch",
+                  message: "The hash in the blockchain event does not match"
+                });
+              }
+              
+              // Verify CID matches
+              if (eventCid !== cid) {
+                return res.status(400).json({
+                  error: "CID mismatch",
+                  message: "The CID in the blockchain event does not match"
+                });
+              }
+              
+              // Verify submitter matches wallet address
+              if (walletAddress && eventSubmitter.toLowerCase() !== walletAddress.toLowerCase()) {
+                return res.status(400).json({
+                  error: "Submitter mismatch",
+                  message: "The transaction was not submitted by the provided wallet"
+                });
+              }
+              
+              eventFound = true;
+              break;
+            }
+          } catch {
+            continue;
+          }
+        }
+        
+        if (!eventFound) {
           return res.status(400).json({
             error: "Event verification failed",
             message: "RecordStored event not found in transaction"
           });
         }
-
-        // Verify the hash in the event matches
-        const eventHash = recordStoredLog.topics[1];
-        const expectedHashBytes32 = '0x' + hash.replace(/^0x/, '').toLowerCase();
-        
-        if (eventHash?.toLowerCase() !== expectedHashBytes32) {
-          return res.status(400).json({
-            error: "Hash mismatch",
-            message: "The hash in the blockchain event does not match"
-          });
-        }
-
-        // Verify the submitter matches the wallet address
-        if (walletAddress) {
-          const eventSubmitter = '0x' + recordStoredLog.topics[2]?.slice(-40);
-          if (eventSubmitter.toLowerCase() !== walletAddress.toLowerCase()) {
-            return res.status(400).json({
-              error: "Submitter mismatch",
-              message: "The transaction was not submitted by the provided wallet"
-            });
-          }
-        }
         
         console.log('✅ Transaction and event verified on-chain:', tx);
       }
 
-      // Save to database
-      const record = await storage.createRecord({
-        text,
-        cid,
-        hash,
-        tx,
-        fileName: fileName || 'unknown',
-        fileType: fileType || 'application/octet-stream',
-        timestamp,
-        walletAddress: walletAddress || null,
-      });
+      // Save to database (unique constraints will prevent duplicates)
+      try {
+        const record = await storage.createRecord({
+          text,
+          cid,
+          hash,
+          tx,
+          fileName: fileName || 'unknown',
+          fileType: fileType || 'application/octet-stream',
+          timestamp,
+          walletAddress: walletAddress || null,
+        });
 
-      console.log('✅ Record saved:', record.id);
+        console.log('✅ Record saved:', record.id);
 
-      res.json({
-        success: true,
-        record,
-      });
+        res.json({
+          success: true,
+          record,
+        });
+      } catch (dbError: any) {
+        // Check for unique constraint violation (PostgreSQL error code 23505)
+        if (dbError?.code === '23505' || dbError?.message?.includes('unique constraint')) {
+          return res.status(409).json({
+            error: "Duplicate record",
+            message: "This content has already been verified"
+          });
+        }
+        throw dbError;
+      }
       
     } catch (error) {
       console.error("Save record error:", error);

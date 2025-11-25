@@ -176,13 +176,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     let hashBytes32: string;
     try {
-      const cleanHash = hash.replace(/^(0x)+/gi, '').toLowerCase();
+      const normalizedHash = hash.startsWith('0x') ? hash : '0x' + hash;
+      const hashBytes = ethers.getBytes(normalizedHash);
       
-      if (cleanHash.length !== 64 || !/^[0-9a-f]+$/.test(cleanHash)) {
-        throw new Error('صيغة غير صحيحة');
+      if (hashBytes.length !== 32) {
+        throw new Error('يجب أن يكون 32 بايت');
       }
       
-      hashBytes32 = ethers.zeroPadValue('0x' + cleanHash, 32);
+      hashBytes32 = ethers.hexlify(hashBytes);
     } catch {
       throw new Error('صيغة الهاش غير صحيحة - يجب أن يكون 32 بايت سداسي عشري');
     }

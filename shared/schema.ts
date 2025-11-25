@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -7,8 +7,8 @@ export const newsRecords = pgTable("news_records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   text: text("text").notNull(),
   cid: text("cid").notNull(),
-  hash: text("hash").notNull(),
-  tx: text("tx"),
+  hash: text("hash").notNull().unique(),
+  tx: text("tx").unique(),
   fileName: text("file_name"),
   fileType: text("file_type"),
   timestamp: text("timestamp").notNull(),
